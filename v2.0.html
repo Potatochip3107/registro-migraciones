@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Geek Corp - Migraciones Registro de Ventas</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f2f7;
+    --surface: #ffffff;
+    --surface2: #f5f7fc;
+    --border: #d4d9ed;
+    --border-active: #3b5de7;
+    --text: #1a1f36;
+    --text-muted: #6b7499;
+    --accent: #3b5de7;
+    --accent2: #6d28d9;
+    --success: #059669;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --prepago: #d97706;
+    --postpago: #3b5de7;
+    --lm: #7c3aed;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 1px 4px rgba(30,40,90,.08), 0 4px 16px rgba(30,40,90,.06);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .header {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 6px rgba(30,40,90,.07);
+  }
+  .header-logo {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-weight: 700; font-size: 16px; color: #fff;
+    flex-shrink: 0;
+  }
+  .header-title { font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.2; }
+  .header-sub { font-size: 11px; color: var(--text-muted); font-family: 'Space Mono', monospace; }
+  .header-date {
+    margin-left: auto;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px; color: var(--text-muted);
+    background: var(--surface2);
+    padding: 5px 11px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+  }
+
+  /* LAYOUT */
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 28px 20px 80px;
+  }
+
+  /* TIPO DE VENTA SELECTOR */
+  .section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .tipo-venta-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  @media(max-width: 600px) { .tipo-venta-grid { grid-template-columns: 1fr 1fr; } }
+
+  .tipo-btn {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 10px;
+    cursor: pointer;
+    text-align: center;
+    transition: all .18s;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .tipo-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--btn-color, var(--accent));
+    transform: scaleX(0);
+    transition: transform .18s;
+  }
+  .tipo-btn:hover { border-color: var(--btn-color, var(--accent)); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(59,93,231,.13); }
+  .tipo-btn.active { border-color: var(--btn-color, var(--accent)); background: #f5f7ff; }
+  .tipo-btn.active::before { transform: scaleX(1); }
+  .tipo-btn .tipo-icon { font-size: 22px; margin-bottom: 5px; }
+  .tipo-btn .tipo-name { font-size: 13px; font-weight: 700; color: var(--text); }
+  .tipo-btn .tipo-code { font-size: 10px; color: var(--text-muted); font-family: 'Space Mono', monospace; margin-top: 2px; }
+
+  .tipo-btn[data-tipo="PREPAGO"]  { --btn-color: var(--prepago); }
+  .tipo-btn[data-tipo="POSTPAGO"] { --btn-color: var(--postpago); }
+  .tipo-btn[data-tipo="LINEA_MOVIL"] { --btn-color: var(--lm); }
+
+  /* CARD */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .card-header {
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 9px;
+    background: var(--surface2);
+  }
+  .card-header-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+  .card-header-title { font-weight: 700; font-size: 13px; color: var(--text); }
+  .card-body { padding: 18px; }
+
+  /* FORM GRID */
+  .form-grid { display: grid; gap: 14px; }
+  .form-grid-2 { grid-template-columns: 1fr 1fr; }
+  .form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  @media(max-width: 600px) { .form-grid-2, .form-grid-3 { grid-template-columns: 1fr; } }
+  .col-span-2 { grid-column: span 2; }
+  @media(max-width: 600px) { .col-span-2 { grid-column: span 1; } }
+
+  /* FIELDS */
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field-label {
+    font-size: 12px; font-weight: 600;
+    color: #444c6e;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .req-star { color: #dc2626; font-size: 13px; line-height: 1; }
+
+  input, select, textarea {
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 9px 13px;
+    width: 100%;
+    transition: border-color .18s, box-shadow .18s;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  input:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(59,93,231,.12);
+  }
+  input::placeholder { color: #aab0cc; }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7499' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+    background-color: #fff;
+  }
+  select option { background: #fff; color: var(--text); }
+  input[type="number"] { -moz-appearance: textfield; }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  /* FIXED VALUE */
+  .fixed-value {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 9px 13px;
+    font-size: 14px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  /* SUBMIT BAR */
+  .submit-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: #fff;
+    border-top: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    z-index: 99;
+    box-shadow: 0 -2px 12px rgba(30,40,90,.07);
+  }
+  .submit-info { font-size: 12px; color: var(--text-muted); }
+  .submit-info strong { color: var(--text); font-family: 'Space Mono', monospace; }
+  .btn-submit {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 11px 28px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 700;
+    cursor: pointer;
+    transition: all .18s;
+  }
+  .btn-submit:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(59,93,231,.3); }
+  .btn-reset {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 11px 18px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    transition: all .18s;
+  }
+  .btn-reset:hover { border-color: var(--text-muted); color: var(--text); }
+
+  /* PROGRESS */
+  .progress-bar { height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 24px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .3s ease; width: 0%; }
+
+  /* HIDDEN */
+  .hidden { display: none !important; }
+
+  /* TIPO BADGE */
+  .tipo-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700;
+    font-family: 'Space Mono', monospace;
+    text-transform: uppercase; letter-spacing: .5px;
+    margin-left: auto;
+  }
+  .tipo-badge.prepago { background: rgba(217,119,6,.1); color: var(--prepago); }
+  .tipo-badge.postpago { background: rgba(59,93,231,.1); color: var(--postpago); }
+  .tipo-badge.lm { background: rgba(124,58,237,.1); color: var(--lm); }
+
+  /* SEARCHABLE SELECT WRAPPER */
+  .search-select-wrap { position: relative; }
+  .search-select-wrap input.search-input {
+    padding-right: 36px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7499' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center;
+  }
+  .search-dropdown {
+    position: absolute; top: calc(100% + 3px); left: 0; right: 0;
+    background: #fff; border: 1.5px solid var(--accent);
+    border-radius: var(--radius-sm);
+    max-height: 220px; overflow-y: auto;
+    z-index: 200;
+    box-shadow: 0 4px 20px rgba(30,40,90,.12);
+  }
+  .search-dropdown-item {
+    padding: 9px 13px; font-size: 13px; cursor: pointer;
+    transition: background .1s; color: var(--text);
+  }
+  .search-dropdown-item:hover, .search-dropdown-item.active { background: #eef1fd; color: var(--accent); }
+  .search-dropdown-item.no-result { color: var(--text-muted); cursor: default; font-style: italic; }
+
+  /* ALERT BANNER */
+  .alert-success {
+    position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
+    background: #fff; border: 1.5px solid #059669;
+    border-left: 5px solid #059669;
+    color: #065f46;
+    padding: 13px 22px;
+    border-radius: var(--radius-sm);
+    font-weight: 600; font-size: 14px;
+    z-index: 500;
+    box-shadow: 0 4px 20px rgba(5,150,105,.15);
+    display: flex; align-items: center; gap: 10px;
+    animation: slideDown .25s ease;
+    white-space: nowrap;
+  }
+  @keyframes slideDown { from { top: 50px; opacity: 0; } to { top: 70px; opacity: 1; } }
+  .alert-success.fade-out { animation: fadeOut .4s ease forwards; }
+  @keyframes fadeOut { to { opacity: 0; transform: translateX(-50%) translateY(-8px); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">GC</div>
+  <div>
+    <div class="header-title">Geek Corp · Migraciones</div>
+    <div class="header-sub">Registro de Ventas</div>
+  </div>
+  <div class="header-date" id="headerDate"></div>
+</div>
+
+<div class="container">
+
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+  <!-- TIPO DE VENTA -->
+  <div class="section-label">Tipo de venta</div>
+  <div class="tipo-venta-grid">
+    <button class="tipo-btn" data-tipo="PREPAGO" onclick="setTipo('PREPAGO')">
+      <div class="tipo-icon">📱</div>
+      <div class="tipo-name">Prepago</div>
+      <div class="tipo-code">Migración C2</div>
+    </button>
+    <button class="tipo-btn" data-tipo="POSTPAGO" onclick="setTipo('POSTPAGO')">
+      <div class="tipo-icon">💼</div>
+      <div class="tipo-name">Postpago</div>
+      <div class="tipo-code">Migración C14</div>
+    </button>
+    <button class="tipo-btn" data-tipo="LINEA_MOVIL" onclick="setTipo('LINEA_MOVIL')">
+      <div class="tipo-icon">🔄</div>
+      <div class="tipo-name">Línea Móvil</div>
+      <div class="tipo-code">Port. / Línea Nueva</div>
+    </button>
+  </div>
+
+  <div id="formSection" class="hidden">
+
+    <!-- DATOS DE VENTA -->
+    <div class="section-label">Datos de la venta</div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-dot" style="background:var(--accent)"></div>
+        <span class="card-header-title">Información de venta</span>
+        <span class="tipo-badge" id="tipoBadge"></span>
+      </div>
+      <div class="card-body">
+        <div class="form-grid form-grid-2">
+
+          <!-- Agente con búsqueda -->
+          <div class="field col-span-2">
+            <label class="field-label">Agente <span class="req-star">*</span></label>
+            <div class="search-select-wrap" id="agenteWrap">
+              <input type="text" class="search-input" id="agenteInput" placeholder="Buscar agente..." autocomplete="off" oninput="filterAgentes()" onfocus="openAgenteDropdown()" onblur="closeAgenteDropdown()" />
+              <input type="hidden" id="agenteValue" />
+              <div class="search-dropdown hidden" id="agenteDropdown"></div>
+            </div>
+          </div>
+
+          <!-- Subtipo (solo Línea Móvil) -->
+          <div class="field" id="field_subtipo">
+            <label class="field-label">Subtipo <span class="req-star">*</span></label>
+            <select id="subtipo" onchange="updateProgress()">
+              <option value="">— Seleccionar —</option>
+              <option value="Portabilidad">Portabilidad</option>
+              <option value="Linea Nueva">Línea Nueva</option>
+            </select>
+          </div>
+
+          <!-- Número a gestionar/migrar -->
+          <div class="field" id="field_numero">
+            <label class="field-label" id="numero_label">Número a gestionar <span class="req-star">*</span></label>
+            <input type="text" inputmode="numeric" pattern="[0-9]*" id="numero" placeholder="Número" maxlength="9" oninput="this.value=this.value.replace(/\D/g,'')" />
+          </div>
+
+          <!-- Plan actual -->
+          <div class="field" id="field_plan_actual">
+            <label class="field-label">Plan actual <span class="req-star">*</span></label>
+            <div class="fixed-value" id="plan_actual_fixed" style="display:none">prepago</div>
+            <input type="text" id="plan_actual_input" placeholder="Nombre del plan actual" />
+          </div>
+
+          <!-- Plan vendido -->
+          <div class="field" id="field_plan_vendido">
+            <label class="field-label">Plan vendido <span class="req-star">*</span></label>
+            <select id="plan_vendido" onchange="updateProgress()">
+              <option value="">— Seleccionar plan —</option>
+            </select>
+          </div>
+
+          <!-- Usuario carga venta (LM) -->
+          <div class="field" id="field_usuario_carga">
+            <label class="field-label">Usuario con el que se cargó la venta <span class="req-star">*</span></label>
+            <select id="usuario_carga" onchange="updateProgress()">
+              <option value="">— Seleccionar usuario —</option>
+              <option>gee_nicolepb_vtp</option>
+              <option>GEE_JOSEPHAM_VTP</option>
+              <option>gee_stephenri_vtp</option>
+              <option>GEE_LUSBYAR2_VTP</option>
+              <option>GEE_CINTYACD_VTP</option>
+            </select>
+          </div>
+
+          <!-- Canal LM -->
+          <div class="field" id="field_canal_lm">
+            <label class="field-label">Canal Línea Móvil <span class="req-star">*</span></label>
+            <select id="canal_lm" onchange="updateProgress()">
+              <option value="">— Seleccionar canal —</option>
+              <option>Out Referidos</option>
+              <option>Out Redes Sociales</option>
+            </select>
+          </div>
+
+          <!-- Venta (Prepago/Postpago) -->
+          <div class="field" id="field_venta">
+            <label class="field-label">Venta <span class="req-star">*</span></label>
+            <select id="venta" onchange="updateProgress()">
+              <option value="">— Seleccionar —</option>
+              <option>Venta de Hoy</option>
+              <option>Venta Recuperada</option>
+            </select>
+          </div>
+
+          <!-- Número de Orden (LM) -->
+          <div class="field" id="field_num_orden">
+            <label class="field-label">Número de Orden <span class="req-star">*</span></label>
+            <input type="text" id="num_orden" placeholder="Número de orden" />
+          </div>
+
+          <!-- Estado Venta (LM) -->
+          <div class="field" id="field_estado_venta">
+            <label class="field-label">Estado Venta <span class="req-star">*</span></label>
+            <select id="estado_venta" onchange="updateProgress()">
+              <option value="">— Seleccionar estado —</option>
+              <option>Nuevo</option>
+              <option>Pendiente</option>
+              <option>Procesamiento</option>
+              <option>Suscriptor registrado</option>
+              <option>Cancelado</option>
+            </select>
+          </div>
+
+          <!-- ARPU -->
+          <div class="field" id="field_arpu">
+            <label class="field-label">ARPU Grupo <span class="req-star">*</span></label>
+            <input type="text" id="arpu" placeholder="Código ARPU" />
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- DATOS DEL CLIENTE -->
+    <div class="section-label">Datos del cliente</div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-dot" style="background:var(--success)"></div>
+        <span class="card-header-title">Identificación</span>
+      </div>
+      <div class="card-body">
+        <div class="form-grid form-grid-2">
+
+          <!-- Tipo doc (solo Prepago/Postpago) -->
+          <div class="field" id="field_tipo_doc">
+            <label class="field-label">Tipo de documento <span class="req-star">*</span></label>
+            <select id="tipo_doc" onchange="updateProgress()">
+              <option value="">— Seleccionar —</option>
+              <option value="DNI">DNI</option>
+              <option value="CE">CE</option>
+            </select>
+          </div>
+
+          <!-- Número de documento -->
+          <div class="field">
+            <label class="field-label">Número de documento <span class="req-star">*</span></label>
+            <input type="text" inputmode="numeric" pattern="[0-9]*" id="num_doc" placeholder="Ej: 12345678" maxlength="12" oninput="this.value=this.value.replace(/\D/g,'')" />
+          </div>
+
+          <!-- Nombres -->
+          <div class="field col-span-2">
+            <label class="field-label">Nombres y apellidos completos <span class="req-star">*</span></label>
+            <input type="text" id="nombres" placeholder="Nombres y apellidos completos" />
+          </div>
+
+          <!-- Fecha nacimiento (Prepago/Postpago) -->
+          <div class="field" id="field_fec_nac">
+            <label class="field-label">Fecha de nacimiento <span class="req-star">*</span></label>
+            <input type="date" id="fec_nac" />
+          </div>
+
+          <!-- Fecha emisión DNI (Prepago/Postpago) -->
+          <div class="field" id="field_fec_dni">
+            <label class="field-label">Fecha de emisión DNI</label>
+            <input type="date" id="fec_dni" />
+          </div>
+
+          <!-- Padre (Prepago/Postpago) -->
+          <div class="field" id="field_padre">
+            <label class="field-label">Nombre del padre</label>
+            <input type="text" id="padre" placeholder="Nombre del padre" />
+          </div>
+
+          <!-- Madre (Prepago/Postpago) -->
+          <div class="field" id="field_madre">
+            <label class="field-label">Nombre de la madre</label>
+            <input type="text" id="madre" placeholder="Nombre de la madre" />
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- LUGAR DE NACIMIENTO (Prepago/Postpago) -->
+    <div class="card" id="card_nacimiento">
+      <div class="card-header">
+        <div class="card-header-dot" style="background:var(--warning)"></div>
+        <span class="card-header-title">Lugar de nacimiento</span>
+      </div>
+      <div class="card-body">
+        <div class="form-grid form-grid-3">
+          <div class="field">
+            <label class="field-label">Departamento <span class="req-star">*</span></label>
+            <select id="nac_dep" onchange="loadProvincias('nac'); updateProgress()">
+              <option value="">— Departamento —</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Provincia <span class="req-star">*</span></label>
+            <select id="nac_prov" onchange="loadDistritos('nac'); updateProgress()">
+              <option value="">— Provincia —</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Distrito <span class="req-star">*</span></label>
+            <select id="nac_dist" onchange="updateProgress()">
+              <option value="">— Distrito —</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DIRECCIÓN ACTUAL -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-dot" style="background:var(--accent2)"></div>
+        <span class="card-header-title">Dirección actual</span>
+      </div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="field">
+            <label class="field-label">Dirección exacta <span class="req-star">*</span></label>
+            <input type="text" id="dir_exacta" placeholder="Av. / Jr. / Calle, número, referencia..." />
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="form-grid form-grid-3">
+          <div class="field">
+            <label class="field-label">Departamento <span class="req-star">*</span></label>
+            <select id="dir_dep" onchange="loadProvincias('dir'); updateProgress()">
+              <option value="">— Departamento —</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Provincia <span class="req-star">*</span></label>
+            <select id="dir_prov" onchange="loadDistritos('dir'); updateProgress()">
+              <option value="">— Provincia —</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Distrito <span class="req-star">*</span></label>
+            <select id="dir_dist" onchange="updateProgress()">
+              <option value="">— Distrito —</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTACTO -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-dot" style="background:#ec4899"></div>
+        <span class="card-header-title">Contacto</span>
+      </div>
+      <div class="card-body">
+        <div class="form-grid form-grid-2">
+          <div class="field">
+            <label class="field-label">Número de referencia <span class="req-star">*</span></label>
+            <input type="text" inputmode="numeric" pattern="[0-9]*" id="num_ref" placeholder="9XXXXXXXX" maxlength="9" oninput="this.value=this.value.replace(/\D/g,'')" />
+          </div>
+          <div class="field">
+            <label class="field-label">Correo electrónico</label>
+            <input type="email" id="email" placeholder="notiene@gmail.com" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SUBMIT BAR -->
+<div class="submit-bar" id="submitBar" style="display:none">
+  <div class="submit-info">Tipo: <strong id="barTipo">—</strong></div>
+  <div style="display:flex;gap:10px">
+    <button class="btn-reset" onclick="resetForm(false)">Limpiar</button>
+    <button class="btn-submit" onclick="submitForm()">Registrar venta →</button>
+  </div>
+</div>
+
+<script>
+// ===== GEO DATA =====
+const GEO = {"Amazonas":{"Chachapoyas":["Chachapoyas","Asunción","Balsas","Cheto","Chiliquín","Cólcamar","Granada","Huancas","La Jalca","Leimebamba","Levanto","Magdalena","Mariscal Castilla","Molinopampa","Montevideo","Olleros","Quinjalca","San Francisco de Daguas","San Isidro de Maino","Soloco","Sonche"],"Bagua":["Bagua","Carmen de la Frontera","Copallin","El Parco","Imaza","La Peca"],"Bongará":["Jumbilla","Chisquilla","Churuja","Corosha","Cuispes","Florida","Jazán","Recta","San Carlos","Shipasbamba","Valera","Yambrasbamba"],"Condorcanqui":["Santa María de Nieva","El Cenepa","Río Santiago"],"Luya":["Lamud","Camporredondo","Cocabamba","Colcamar","Conila","Inguilpata","Longuita","Lonya Chico","Luya","Luya Viejo","María","Ocalli","Ocumal","Pisuquia","Providencia","San Cristóbal","San Francisco del Yeso","San Jerónimo","San Juan de Lopecancha","Santa Catalina","Santo Tomás","Tingo","Trita"],"Rodríguez de Mendoza":["San Nicolás","Chirimoto","Cochamal","Huambo","Limabamba","Longar","Mariscal Benavides","Milpuc","Omia","Santa Rosa","Totoras","Vista Alegre"],"Utcubamba":["Bagua Grande","Cajaruro","Cumba","El Milagro","Jamalca","Lonya Grande","Yamón"]},"Áncash":{"Huaraz":["Huaraz","Cochabamba","Colcabamba","Huanchay","Independencia","Jangas","La Libertad","Llanganuco","Pampas","Pampas Grande","Pira","Tarica"],"Aija":["Aija","Coris","Huacllán","La Merced","Succha"],"Antonio Raimondi":["Llamellín","Aczo","Chingas","Mirgas","San Juan de Rontoy"],"Asunción":["Chacas","Acochaca"],"Bolognesi":["Chiquián","Abelardo Pardo Lezameta","Antonio Raymondi","Aquia","Cajacay","Canis","Corpanqui","Huallanca","Huasta","Huayllacayán","La Primavera","Mangas","Pacllon","San Miguel de Corpanqui","Ticllos"],"Carhuaz":["Carhuaz","Acopampa","Amashca","Anta","Ataquero","Marcará","Pashpa","San Miguel de Aco","Shilla","Tinco","Yungar"],"Carlos Fermín Fitzcarrald":["San Luis","San Nicolás","Yauya"],"Casma":["Casma","Buena Vista Alta","Comandante Noel","Yaután"],"Corongo":["Corongo","Aco","Bambas","Cusca","La Pampa","Pampas","Yanac"],"Huari":["Huari","Anra","Cajay","Chavin de Huantar","Huacachi","Huacchis","Huachis","Huantar","Masin","Paucas","Ponto","Rahuapampa","Rapayan","San Marcos","San Pedro de Chana","Uco"],"Huarmey":["Huarmey","Cochapeti","Culebras","Huayan","Malvas"],"Huaylas":["Caraz","Huallanca","Huata","Huaylas","Mato","Pamparomas","Pueblo Libre","Santa Cruz","Santo Toribio","Yuracmarca"],"Mariscal Luzuriaga":["Piscobamba","Casca","Eleazar Guzmán Barrón","Fidel Olivas Escudero","Llumpa","Lucma","Musga"],"Ocros":["Ocros","Acas","Cajamarquilla","Carhuapampa","Cochas","Congas","Llipa","San Cristóbal de Raján","San Pedro","Santiago de Chilcas"],"Pallasca":["Cabana","Bolognesi","Conchucos","Huacaschuque","Huandoval","Lacabamba","Llapo","Pallasca","Pampas","Santa Rosa","Tauca"],"Pomabamba":["Pomabamba","Huayllan","Parobamba","Quinuabamba"],"Recuay":["Recuay","Catac","Cotaparaco","Huayllapampa","Llacllin","Marca","Pampas Chico","Pampas Grande","Pátapo","Punta Callán","Tapacocha","Ticapampa"],"Santa":["Chimbote","Cáceres del Perú","Coishco","Macate","Moro","Nepeña","Samanco","Santa","Nuevo Chimbote"],"Sihuas":["Sihuas","Acobamba","Alfonso Ugarte","Cashapampa","Chingalpo","Huayllabamba","Quiches","Ragash","San Juan","Sicsibamba"],"Yungay":["Yungay","Cascapara","Mancos","Matacoto","Quillo","Ranrahirca","Shupluy","Yanama"]},"Apurímac":{"Abancay":["Abancay","Chacoche","Circa","Curahuasi","Huanipaca","Lambrama","Pichirhua","San Pedro de Cachora","Tamburco"],"Andahuaylas":["Andahuaylas","Andarapa","Chiara","Huancarama","Huancaray","Huayana","Kishuara","Pacobamba","Pacucha","Pampachiri","Pomacocha","San Antonio de Cachi","San Jerónimo","San Miguel de Chaccrampa","Santa María de Chicmo","Talavera","Tumay Huaraca","Turpo","Kaquiabamba","José María Arguedas"],"Aymaraes":["Chalhuanca","Capaya","Caraybamba","Chapimarca","Colcabamba","Cotaruse","Huayllo","Justo Apu Sahuaraura","Lucre","Pocohuanca","San Juan de Choquekirao","Sañayca","Soraya","Tapairihua","Tintay","Toraya","Yanaca"],"Cotabambas":["Tambobamba","Cotabambas","Coyllurqui","Haquira","Mara","Challhuahuacho"],"Chincheros":["Chincheros","Anco-Huallo","Cocharcas","Huaccana","Ocobamba","Ongoy","Uranmarca","Ranracancha","Rocchacc","El Porvenir","Los Chankas"],"Grau":["Chuquibambilla","Curpahuasi","Gamarra","Huayllati","Mamara","Micaela Bastidas","Pataypampa","Progreso","San Antonio","Santa Rosa","Turpay","Vilcabamba","Virundo","Curasco"]},"Arequipa":{"Arequipa":["Arequipa","Alto Selva Alegre","Cayma","Cerro Colorado","Characato","Chiguata","Jacobo Hunter","José Luis Bustamante y Rivero","La Joya","Mariano Melgar","Miraflores","Mollebaya","Paucarpata","Pocsi","Polobaya","Quequeña","Sabandia","Sachaca","San Juan de Siguas","San Juan de Tarucani","Santa Isabel de Siguas","Santa Rita de Siguas","Socabaya","Tiabaya","Tigre","Uchumayo","Vitor","Yanahuara","Yarabamba","Yura"],"Camaná":["Camaná","José María Quimper","Mariano Nicolás Valcárcel","Mariscal Cáceres","Nicolás de Piérola","Ocoña","Quilca","Samuel Pastor"],"Caravelí":["Caravelí","Acarí","Atico","Atiquipa","Bella Unión","Cahuacho","Chala","Chaparra","Huanuhuanu","Jaqui","Lomas","Quicacha","Yauca"],"Castilla":["Aplao","Andagua","Ayo","Chachas","Chilcaymarca","Choco","Huancarqui","Machaguay","Orcopampa","Pampacolca","Tipán","Uñon","Uraca","Viraco"],"Caylloma":["Chivay","Achoma","Cabanaconde","Callalli","Caylloma","Coporaque","Huambo","Huanca","Ichupampa","Lari","Lluta","Maca","Madrigal","San Antonio de Chuca","Sibayo","Tapay","Tisco","Tuti","Yanque","Majes"],"Condesuyos":["Chuquibamba","Andaray","Cayarani","Chichas","Iray","Río Grande","Salamanca","Yanaquihua"],"Islay":["Mollendo","Cocachacra","Dean Valdivia","Islay","Mejía","Punta de Bombón"],"La Unión":["Cotahuasi","Alca","Charcana","Huaynacotas","Pampamarca","Puyca","Quechualla","Sayla","Tauria","Tomepampa","Toro"]},"Ayacucho":{"Huamanga":["Ayacucho","Acocro","Acos Vinchos","Carmen Alto","Chiara","Ocros","Pacaycasa","Quinua","San José de Ticllas","San Juan Bautista","Santiago de Pischa","Socos","Tambillo","Vinchos","Jesús Nazareno","Andrés Avelino Cáceres Dorregaray"],"Cangallo":["Cangallo","Chuschi","Los Morochucos","María Parado de Bellido","Paras","Totos"],"Huancasancos":["Sancos","Carapo","Sacsamarca","Santiago de Lucanamarca"],"Huanta":["Huanta","Ayahuanco","Huamanguilla","Iguaín","Luricocha","Santillana","Sivia","Llochegua","Canayre","Uchuraccay","Pucacolpa","Chaca"],"La Mar":["San Miguel","Anco","Ayna","Chilcas","Chungui","Luis Carranza","Santa Rosa","Tambo","Samugari","Anchihuay","Oronccoy"],"Lucanas":["Puquio","Aucará","Cabana","Carmen Salcedo","Chaviña","Chipao","Huac-Huas","Laramate","Leoncio Prado","Llauta","Lucanas","Ocaña","Otoca","Saisa","San Cristóbal","San Juan","San Pedro","San Pedro de Palco","Sancos","Santa Ana de Huaycahuacho","Santa Lucia"],"Parinacochas":["Coracora","Chumpi","Coronel Castañeda","Pacapausa","Puyusca","San Francisco de Ravacayco","Upahuacho"],"Páucar del Sara Sara":["Pausa","Colta","Corculla","Lampa","Marcabamba","Oyolo","Pararca","San Javier de Alpabamba","San José de Ushua","Sara Sara"],"Sucre":["Querobamba","Belen","Chalcos","Chilcayoc","Huacaña","Morcolla","Paico","San Salvador de Quije","Santiago de Paucaray","Soras"],"Víctor Fajardo":["Huancapi","Alcamenca","Apongo","Asquipata","Canaria","Cayara","Colca","Huamanquiquia","Huancaraylla","Huaya","Sarhua","Vilcanchos"],"Vilcas Huamán":["Vilcas Huamán","Accomarca","Carhuanca","Concepción","Huambalpa","Independencia","Saurama","Vischongo"]},"Cajamarca":{"Cajamarca":["Cajamarca","Asunción","Chetilla","Cospan","Encañada","Jesús","Llacanora","Los Baños del Inca","Magdalena","Matara","Namora","San Juan"],"Cajabamba":["Cajabamba","Cachachi","Condebamba","Sitacocha"],"Celendín":["Celendín","Chumuch","Cortegana","Huasmin","Jorge Chávez","José Gálvez","Miguel Iglesias","Oxamarca","Sorochuco","Sucre","Utco","La Libertad de Pallán"],"Chota":["Chota","Anguia","Chadín","Chiguirip","Chimban","Choropampa","Cochabamba","Conchan","Huambos","Lajas","Llama","Miracosta","Paccha","Pion","Querocoto","San Juan de Licupis","Tacabamba","Tocmoche","Chalamarca"],"Contumazá":["Contumazá","Chilete","Cupisnique","Guzmango","San Benito","Santa Cruz de Toledo","Tantarica","Yonan"],"Cutervo":["Cutervo","Callayuc","Choros","Cujillo","La Ramada","Pimpingos","Querocotillo","San Andrés de Cutervo","San Juan de Cutervo","San Luis de Lucma","Santa Cruz","Santo Domingo de la Capilla","Santo Tomás","Socota","Toribio Casanova"],"Hualgayoc":["Bambamarca","Chugur","Hualgayoc"],"Jaén":["Jaén","Bellavista","Chontali","Colasay","Huabal","Las Pirias","Pomahuaca","Pucará","Sallique","San Felipe","San José del Alto","Santa Rosa"],"San Ignacio":["San Ignacio","Chirinos","Huarango","La Coipa","Namballe","San José de Lourdes","Tabaconas"],"San Marcos":["Pedro Gálvez","Chancay","Eduardo Villanueva","Gregorio Pita","Ichocán","José Manuel Quiroz","José Sabogal"],"San Miguel":["San Miguel","Bolívar","Calquis","Catilluc","El Prado","La Florida","Llapa","Nanchoc","Niepos","San Gregorio","San Silvestre de Cochán","Tongod","Unión Agua Blanca"],"San Pablo":["San Pablo","San Bernardino","San Luis","Tumbaden"],"Santa Cruz":["Santa Cruz","Andabamba","Catache","Chancaybaños","La Esperanza","Ninabamba","Pulan","Saucepampa","Sexi","Uticyacu","Yauyucan"]},"Callao":{"Callao":["Callao","Bellavista","Carmen de La Legua Reynoso","La Perla","La Punta","Ventanilla","Mi Perú"]},"Cusco":{"Cusco":["Cusco","Ccorca","Poroy","San Jerónimo","San Sebastián","Santiago","Saylla","Wanchaq"],"Acomayo":["Acomayo","Acopia","Acos","Mosoc Llacta","Pomacanchi","Rondocan","Sangarará"],"Anta":["Anta","Ancahuasi","Cachimayo","Chinchaypujio","Huarocondo","Limatambo","Mollepata","Pucyura","Zurite"],"Calca":["Calca","Coya","Lamay","Lares","Pisac","San Salvador","Taray","Yanatile"],"Canas":["Yanaoca","Checca","Kunturkanki","Langui","Layo","Pampamarca","Quehue","Tupac Amaru"],"Canchis":["Sicuani","Checacupe","Combapata","Marangani","Pitumarca","San Pablo","San Pedro","Tinta"],"Chumbivilcas":["Santo Tomás","Capacmarca","Chamaca","Colquemarca","Livitaca","Llusco","Quiñota","Velille"],"Espinar":["Espinar","Condoroma","Coporaque","Ocoruro","Pallpata","Pichigua","Suyckutambo","Alto Pichigua"],"La Convención":["Santa Ana","Echarate","Huayopata","Maranura","Ocobamba","Quellouno","Kimbiri","Santa Teresa","Vilcabamba","Pichari","Inkawasi","Villa Kintiarina","Villa Virgen"],"Paruro":["Paruro","Accha","Ccapi","Colcha","Huanoquite","Omacha","Paccaritambo","Pillpinto","Yaurisque"],"Paucartambo":["Paucartambo","Caicay","Challabamba","Colquepata","Huancarani","Kosñipata"],"Quispicanchi":["Urcos","Andahuaylillas","Camanti","Ccarhuayo","Ccatca","Cusipata","Huaro","Lucre","Marcapata","Ocongate","Oropesa","Quiquijana"],"Urubamba":["Urubamba","Chinchero","Huayllabamba","Machupicchu","Maras","Ollantaytambo","Yucay"]},"Huancavelica":{"Huancavelica":["Huancavelica","Acobambilla","Acoria","Conayca","Cuenca","Huachocolpa","Huayllahuara","Izcuchaca","Laria","Manta","Mariscal Cáceres","Moya","Nuevo Occoro","Palca","Pilchaca","Vilca","Yauli","Ascensión","Huando"],"Acobamba":["Acobamba","Andabamba","Anta","Caja","Marcas","Paucara","Pomacocha","Rosario"],"Angaraes":["Lircay","Anchonga","Callanmarca","Ccochaccasa","Chincho","Congalla","Huanca-Huanca","Huayllay Grande","Julcamarca","San Antonio de Antaparco","Santo Tomás de Pata","Secclla"],"Castrovirreyna":["Castrovirreyna","Arma","Aurahua","Capillas","Chupamarca","Cocas","Huachos","Huamatambo","Mollepampa","San Juan","Santa Ana","Ticrapo"],"Churcampa":["Churcampa","Anco","Chinchihuasi","El Carmen","La Merced","Locroja","Paucarbamba","San Miguel de Mayocc","San Pedro de Coris","Pachamarca","Cosme"],"Huaytará":["Huaytará","Ayavi","Córdova","Huayacundo Arma","Laramarca","Ocopaña","Pilpichaca","Querco","Quito-Arma","San Antonio de Cusicancha","San Francisco de Sangayaico","San Isidro","Santiago de Chocorvos","Santiago de Quirahuara","Santo Domingo de Capillas","Tambo"],"Tayacaja":["Pampas","Acostambo","Acraquia","Ahuaycha","Colcabamba","Daniel Hernández","Huachocolpa","Huaribamba","Ñahuimpuquio","Pazos","Quishuar","Salcabamba","Salcahuasi","San Marcos de Rocchac","Surcubamba","Tintay Puncu","Quichuas","Andaymarca","Roble","Pichos"]},"Huánuco":{"Huánuco":["Huánuco","Amarilis","Chinchao","Churubamba","Margos","Quisqui","San Francisco de Cayran","San Pedro de Chaulán","Santa María del Valle","Yarumayo","Pillco Marca","Yacus","San Pablo de Pillao"],"Ambo":["Ambo","Cayna","Colpas","Conchamarca","Huacar","San Francisco","San Rafael","Tomay Kichwa"],"Dos de Mayo":["La Unión","Chuquis","Marías","Pachas","Quivilla","Ripan","Shunqui","Sillapata","Yanas"],"Huacaybamba":["Huacaybamba","Canchabamba","Cochabamba","Pinra"],"Huamalíes":["Llata","Arancay","Chavín de Pariarca","Jacas Grande","Jircan","Miraflores","Monzón","Punchao","Puños","Singa","Tantamayo"],"Leoncio Prado":["Rupa-Rupa","Daniel Alomía Robles","Hermilio Valdizán","José Crespo y Castillo","Luyando","Mariano Dámaso Beraún","Pucayacu","Castillo Grande","Pueblo Nuevo"],"Marañón":["Huacrachuco","Cholon","San Buenaventura"],"Pachitea":["Panao","Chaglla","Molino","Umari"],"Puerto Inca":["Puerto Inca","Codo del Pozuzo","Honoria","Tournavista","Yuyapichis"],"Lauricocha":["Jesús","Baños","Jivia","Queropalca","Rondos","San Francisco de Asís","San Miguel de Cauri"],"Yarowilca":["Chavinillo","Cahuac","Chacabamba","Aparicio Pomares","Jacas Chico","Obas","Pampamarca","Choras"]},"Ica":{"Ica":["Ica","La Tinguiña","Los Aquijes","Ocucaje","Pachacútec","Parcona","Pueblo Nuevo","Salas","San José de Los Molinos","San Juan Bautista","Santiago","Subtanjalla","Tate","Yauca del Rosario"],"Chincha":["Chincha Alta","Alto Larán","Chavín","Chincha Baja","El Carmen","Grocio Prado","Hernando de Lavalle","Pueblo Nuevo","San Juan de Yanac","San Pedro de Huacarpana","Sunampe","Tambo de Mora"],"Nasca":["Nasca","Changuillo","El Ingenio","Marcona","Vista Alegre"],"Palpa":["Palpa","Llipata","Río Grande","Santa Cruz","Tibillo"],"Pisco":["Pisco","Huancano","Humay","Independencia","Paracas","San Andrés","San Clemente","Túpac Amaru Inca"]},"Junín":{"Huancayo":["Huancayo","Carhuacallanga","Chacapampa","Chicche","Chilca","Chongos Alto","Chupuro","Colca","Cullhuas","El Tambo","Huacrapuquio","Hualhuas","Huancan","Huasicancha","Huayucachi","Ingenio","Pariahuanca","Pilcomayo","Pucará","Quichuay","Quilcas","San Agustín","San Jerónimo de Tunán","Saño","Sapallanga","Sicaya","Santo Domingo de Acobamba","Viques"],"Chanchamayo":["Chanchamayo","Perené","Pichanaqui","San Luis de Shuaro","San Ramón","Vitoc"],"Concepción":["Concepción","Aco","Andamarca","Chambara","Cochas","Comas","Heroínas Toledo","Manzanares","Mariscal Castilla","Matahuasi","Mito","Nueve de Julio","Orcotuna","San José de Quero","Santa Rosa de Ocopa"],"Jauja":["Jauja","Acolla","Apata","Ataura","Canchayllo","Curicaca","El Mantaro","Huamali","Huaripampa","Huertas","Janjaillo","Julcán","Leonor Ordóñez","Llocllapampa","Marco","Masma","Masma Chicche","Molinos","Monobamba","Muqui","Muquiyauyo","Paca","Paccha","Pancan","Parco","Pomacancha","Ricran","San Lorenzo","San Pedro de Chunan","Sausa","Sincos","Tunan Marca","Yauli","Yauyos"],"Junín":["Junín","Carhuamayo","Ondores","Ulcumayo"],"Satipo":["Satipo","Coviriali","Llaylla","Mazamari","Pampa Hermosa","Pangoa","Río Negro","Río Tambo","Vizcatan del Ene"],"Tarma":["Tarma","Acobamba","Huaricolca","Huasahuasi","La Unión","Palca","Palcamayo","San Pedro de Cajas","Tapo"],"Yauli":["La Oroya","Chacapalpa","Huay-Huay","Marcapomacocha","Morococha","Paccha","Santa Bárbara de Carhuacayán","Santa Rosa de Sacco","Suitucancha","Yauli"],"Chupaca":["Chupaca","Ahuac","Chongos Bajo","Huachac","Huamancaca Chico","San Juan de Iscos","San Juan de Jarpa","Tres de Diciembre","Yanacancha"]},"La Libertad":{"Trujillo":["Trujillo","El Porvenir","Florencia de Mora","Huanchaco","La Esperanza","Laredo","Moche","Poroto","Salaverry","Simbal","Victor Larco Herrera"],"Ascope":["Ascope","Chicama","Chocope","Magdalena de Cao","Paiján","Rázuri","Santiago de Cao","Casa Grande"],"Bolívar":["Bolívar","Bambamarca","Condormarca","Longotea","Uchumarca","Ucuncha"],"Chepén":["Chepén","Pacanga","Pueblo Nuevo"],"Julcán":["Julcán","Carabamba","Calamarca","Huaso"],"Otuzco":["Otuzco","Agallpampa","Charat","Huaranchal","La Cuesta","Mache","Paranday","Salpo","Sinsicap","Usquil"],"Pacasmayo":["San Pedro de Lloc","Guadalupe","Jequetepeque","Pacasmayo","San José"],"Pataz":["Tayabamba","Buldibuyo","Chillia","Huaylillas","Huancaspata","Huayo","Ongón","Parcoy","Pataz","Pías","Santiago de Challas","Taurija","Urpay"],"Sánchez Carrión":["Huamachuco","Chugay","Cochorco","Curgos","Marcabal","Sanagorán","Sarín","Sartimbamba"],"Santiago de Chuco":["Santiago de Chuco","Angasmarca","Cachicadán","Mollebamba","Mollepata","Quiruvilca","Santa Cruz de Chuca","Sitabamba"],"Gran Chimú":["Cascas","Lucma","Marmot","Sayapullo"],"Virú":["Virú","Chao","Guadalupito"]},"Lambayeque":{"Chiclayo":["Chiclayo","Cayaltí","Chongoyape","Eten","Eten Puerto","José Leonardo Ortiz","La Victoria","Lagunas","Monsefu","Nueva Arica","Oyotún","Picsi","Pimentel","Reque","Santa Rosa","Saña","Tumán","Pomalca","Pucalá"],"Ferreñafe":["Ferreñafe","Cañaris","Incahuasi","Manuel Antonio Mesones Muro","Pitipo","Pueblo Nuevo"],"Lambayeque":["Lambayeque","Chochope","Illimo","Jayanca","Mochumí","Mórrope","Motupe","Olmos","Pacora","Salas","San José","Túcume"]},"Lima":{"Lima":["Lima","Ancón","Ate","Barranco","Breña","Carabayllo","Chaclacayo","Chorrillos","Cieneguilla","Comas","El Agustino","Independencia","Jesús María","La Molina","La Victoria","Lince","Los Olivos","Lurigancho","Lurín","Magdalena del Mar","Pueblo Libre","Miraflores","Pachacámac","Pucusana","Puente Piedra","Punta Hermosa","Punta Negra","Rímac","San Bartolo","San Borja","San Isidro","San Juan de Lurigancho","San Juan de Miraflores","San Luis","San Martín de Porres","San Miguel","Santa Anita","Santa María del Mar","Santa Rosa","Santiago de Surco","Surquillo","Villa El Salvador","Villa María del Triunfo"],"Barranca":["Barranca","Paramonga","Pativilca","Supe","Supe Puerto"],"Canta":["Canta","Arahuay","Huamantanga","Huaros","Lachaqui","San Buenaventura","Santa Rosa de Quives"],"Cañete":["San Vicente de Cañete","Asia","Calango","Cerro Azul","Chilca","Coayllo","Imperial","Lunahuaná","Mala","Nuevo Imperial","Pacarán","Quilmaná","San Antonio","San Luis","Santa Cruz de Flores","Zúñiga"],"Huaral":["Huaral","Atavillos Alto","Atavillos Bajo","Aucallama","Chancay","Ihuarí","Lampián","Pacaraos","San Miguel de Acos","Santa Cruz de Andamarca","Sumbilca","Veintisiete de Noviembre"],"Huarochirí":["Matucana","Antioquia","Callahuanca","Carampoma","Chicla","Cuenca","Huachupampa","Huanza","Huarochirí","Lahuaytambo","Langa","Laraos","Mariatana","Ricardo Palma","San Andrés de Tupicocha","San Antonio","San Damián","San Juan de Iris","Santa Eulalia","Santiago de Tuna","Santo Domingo de los Olleros","Surco"],"Huaura":["Huacho","Ambar","Caleta de Carquín","Checras","Hualmay","Huaura","Leoncio Prado","Paccho","Santa Leonor","Santa María","Sayán","Vegueta"],"Oyón":["Oyón","Andajes","Caujul","Cochamarca","Navan","Pachangara"],"Yauyos":["Yauyos","Alis","Allauca","Ayaviri","Cacra","Carania","Catahuasi","Chocos","Cochas","Colonia","Hongos","Huampara","Huancaya","Huangascar","Huantán","Huañec","Laraos","Lincha","Madeán","Miraflores","Omas","Putinza","Quinches","Quinocay","San Joaquín","San Pedro de Pilas","Tanta","Tauripampa","Tomas","Tupe","Viñac","Vitis"]},"Loreto":{"Maynas":["Iquitos","Alto Nanay","Fernando Lores","Indiana","Las Amazonas","Mazan","Napo","Punchana","Putumayo","San Juan Bautista","Torres Causana","Belén"],"Alto Amazonas":["Yurimaguas","Balsapuerto","Jeberos","Lagunas","Santa Cruz","Teniente César López Rojas"],"Loreto":["Nauta","Parinari","Tigre","Trompeteros","Urarinas"],"Mariscal Ramón Castilla":["Ramón Castilla","Pebas","Yavari","San Pablo"],"Requena":["Requena","Alto Tapiche","Capelo","Emilio San Martín","Maquia","Puinahua","Saquena","Soplin","Tapiche","Jenaro Herrera","Yaquerana"],"Ucayali":["Contamana","Inahuaya","Padre Márquez","Pampa Hermosa","Sarayacu","Vargas Guerra"],"Datem del Marañón":["San Lorenzo","Andoas","Cahuapanas","Manseriche","Morona","Pastaza"],"Putumayo":["El Estrecho","Huapapa","Rosa Panduro","Teniente Manuel Clavero","Yaguas"]},"Madre de Dios":{"Tambopata":["Puerto Maldonado","Inambari","Las Piedras","Laberinto","Tambopata"],"Manu":["Manu","Fitzcarrald","Madre de Dios","Huepetuhe"],"Tahuamanu":["Iñapari","Iberia","Tahuamanu"]},"Moquegua":{"Mariscal Nieto":["Moquegua","Carumas","Cuchumbaya","Samegua","San Cristóbal","Torata"],"General Sánchez Cerro":["Omate","Chojata","Coalaque","Ichuña","La Capilla","Lloque","Matalaque","Puquina","Quinistaquillas","Ubinas","Yunga"],"Ilo":["Ilo","El Algarrobal","Pacocha"]},"Pasco":{"Pasco":["Chaupimarca","Huachón","Huariaca","Huayllay","Ninacaca","Pallanchacra","Paucartambo","San Francisco de Asís de Yarusyacán","Simon Bolívar","Ticlacayan","Tinyahuarco","Vicco","Yanacancha"],"Daniel Alcídes Carrión":["Yanahuanca","Chacayan","Goyllarisquizga","Paucar","San Pedro de Pillao","Santa Ana de Tusi","Tapuc","Vilcabamba"],"Oxapampa":["Oxapampa","Chontabamba","Huancabamba","Palcazu","Pozuzo","Puerto Bermúdez","Villa Rica","Constitución"]},"Piura":{"Piura":["Piura","Castilla","Catacaos","Cura Mori","El Tallan","La Arena","La Unión","Las Lomas","Tambogrande","26 de Octubre"],"Ayabaca":["Ayabaca","Frias","Jilili","Lagunas","Montero","Pacaipampa","Paimas","Sapillica","Sicchez","Suyo"],"Huancabamba":["Huancabamba","Canchaque","El Carmen de la Frontera","Huarmaca","Lalaquiz","San Miguel del Faique","Sondor","Sondorillo"],"Morropón":["Chulucanas","Buenos Aires","Chalaco","La Matanza","Morropón","Salitral","San Juan de Bigote","Santa Catalina de Mossa","Santo Domingo","Yamango"],"Paita":["Paita","Amotape","Arenal","Colan","La Huaca","Tamarindo","Vichayal"],"Sullana":["Sullana","Bellavista","Ignacio Escudero","Lancones","Marcavelica","Miguel Checa","Querecotillo","Salitral"],"Talara":["Pariñas","El Alto","La Brea","Lobitos","Los Órganos","Máncora"],"Sechura":["Sechura","Bellavista de la Unión","Bernal","Cristo Nos Valga","Rinconada Llicuar","Vice"]},"Puno":{"Puno":["Puno","Acora","Amantani","Atuncolla","Capachica","Chucuito","Coata","Huata","Mañazo","Paucarcolla","Pichacani","Platería","San Antonio","Tiquillaca","Vilque"],"Azángaro":["Azángaro","Achaya","Arapa","Asillo","Caminaca","Chupa","José Domingo Choquehuanca","Muñani","Potoni","Saman","San Antón","San José","San Juan de Salinas","Santiago de Pupuja","Tirapata"],"Carabaya":["Macusani","Ajoyani","Ayapata","Coasa","Corani","Crucero","Ituata","Ollachea","San Gabán","Usicayos"],"Chucuito":["Juli","Desaguadero","Huacullani","Kelluyo","Pisacoma","Pomata","Zepita"],"El Collao":["Ilave","Capazo","Pilcuyo","Santa Rosa","Conduriri"],"Huancané":["Huancané","Cojata","Huatasani","Inchupalla","Pusi","Rosaspata","Taraco","Vilque Chico"],"Lampa":["Lampa","Cabanilla","Calapuja","Nicasio","Ocuviri","Palca","Paratia","Pucará","Santa Lucía","Vilavila"],"Melgar":["Ayaviri","Antauta","Cupi","Llalli","Macari","Nuñoa","Orurillo","Santa Rosa","Umachiri"],"Moho":["Moho","Conima","Huayrapata","Tilali"],"San Antonio de Putina":["Putina","Ananea","Pedro Vilca Apaza","Quilcapuncu","Sina"],"San Román":["Juliaca","Cabana","Cabanillas","Caracoto","San Miguel"],"Sandia":["Sandia","Cuyocuyo","Limbani","Patambuco","Phara","Quiaca","San Juan del Oro","Yanahuaya","Alto Inambari","San Pedro de Putina Punco"],"Yunguyo":["Yunguyo","Anapia","Copani","Cuturapi","Ollaraya","Tinicachi","Unicachi"]},"San Martín":{"Moyobamba":["Moyobamba","Calzada","Habana","Jepelacio","Soritor","Yantalo"],"Bellavista":["Bellavista","Alto Biavo","Bajo Biavo","Huallaga","San Pablo","San Rafael"],"El Dorado":["San José de Sisa","Agua Blanca","San Martín","Santa Rosa","Shatoja"],"Huallaga":["Saposoa","Alto Saposoa","El Eslabón","Piscoyacu","Sacanche","Tingo de Saposoa"],"Lamas":["Lamas","Alonso de Alvarado","Barranquita","Caynarachi","Cuñumbuqui","Pinto Recodo","Rumisapa","San Roque de Cumbaza","Shanao","Tabalosos","Zapatero"],"Mariscal Cáceres":["Juanjuí","Campanilla","Huicungo","Pachiza","Pajarillo"],"Picota":["Picota","Buenos Aires","Caspizapa","Pilluana","Pucacaca","San Cristóbal","San Hilarión","Shamboyacu","Tingo de Ponaza","Tres Unidos"],"Rioja":["Rioja","Awajun","Elías Soplin Vargas","Nueva Cajamarca","Pardo Miguel","Posic","San Fernando","Yuracyacu"],"San Martín":["Tarapoto","Alberto Leveau","Cacatachi","Chazuta","Chipurana","El Porvenir","Huimbayoc","Juan Guerra","La Banda de Shilcayo","Morales","Papaplaya","San Antonio","Sauce","Shapaja"],"Tocache":["Tocache","Nuevo Progreso","Pólvora","Shunté","Uchiza"]},"Tacna":{"Tacna":["Tacna","Alto de La Alianza","Calana","Ciudad Nueva","Inclán","Pachia","Palca","Pocollay","Sama","Coronel Gregorio Albarracín Lanchipa","La Yarada Los Palos"],"Candarave":["Candarave","Cairani","Camilaca","Curibaya","Huanuara","Quilahuani"],"Jorge Basadre":["Locumba","Ilabaya","Ite"],"Tarata":["Tarata","Chucatamani","Estique","Estique-Pampa","Sitajara","Susapaya","Tarucachi","Ticaco"]},"Tumbes":{"Tumbes":["Tumbes","Corrales","La Cruz","Pampas de Hospital","San Jacinto","San Juan de La Virgen"],"Contralmirante Villar":["Zorritos","Casitas","Canoas de Punta Sal"],"Zarumilla":["Zarumilla","Aguas Verdes","Matapalo","Papayal"]},"Ucayali":{"Coronel Portillo":["Callería","Campoverde","Iparia","Masisea","Yarinacocha","Nueva Requena","Manantay"],"Atalaya":["Raymondi","Sepahua","Tahuania","Yurúa"],"Padre Abad":["Padre Abad","Irazola","Curimaná","Neshuya","Alexander Von Humboldt"],"Purús":["Purús"]}};
+
+const AGENTES = ["FALCON DIAZ MARY MAYTE","FALCON FALCON DAISI ELISABETH","FREYRE CARRERA KARLA ESPERANZA","GONZALES LLAGUENTA CYNTHIA MAGALI","LLACSAHUANGA VALLADARES FRESY","MARIÑAS PALACIOS MARIA DE LOS ANGELES","OCHAVANO PANAIFO JOHANITA MILAGROS KATHERIN","OPORTO HUATUCO ANA FAVIOLA","RUIZ MOZOMBITE YESMITH","VALDIVIEZO ROJAS TALI BEATRIZ","DELGADO VASQUEZ SEGUNDO ANDERSON","CANTARO PARDO DORIS DEL CARMEN","ABAD MORE JOSEPH STEVEN","GUIZADO JOSE RUTH KATHERINE","CAMAC MITAC YULI KATY","HUAYLINOS CASTRO PABLO GABRIEL","PALIZA BENGOA NICOLE NAYELLI","RIVERA INCHISANA STEPHEN GAMALIEL","OJT 1","OJT 2","OJT 3","OJT 4","OJT 5","OJT 6","OJT 7","OJT 8","OJT 9","OJT 10"];
+
+const PLANES = {
+  PREPAGO:["Flash 29.9","Ilimitado 39.9","Ilimitado 49.9","Ilimitado 55.9","Ilimitado 65.9","Ilimitado 69.9","Ilimitado 79.9"],
+  POSTPAGO:["Ilimitado 39.9","Ilimitado 49.9","Ilimitado 55.9","Ilimitado 65.9","Ilimitado 69.9","Ilimitado 79.9"],
+  LINEA_MOVIL_PORT:["Flash 29.90","Ilimitado 39.9","Ilimitado 49.9","Ilimitado 55.9","Ilimitado 65.9","Ilimitado 69.90","Ilimitado 79.9","Ilimitado 99.9","Ilimitado 105.9","Flash 109.90"],
+  LINEA_MOVIL_NUEVA:["Ilimitado 39.9","Ilimitado 49.9","Ilimitado 55.9","Ilimitado 65.9","Ilimitado 69.90","Ilimitado 79.9","Ilimitado 99.9","Ilimitado 105.9","Flash 109.90"]
+};
+
+let currentTipo = null;
+const DEPARTAMENTOS = Object.keys(GEO);
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  const now = new Date();
+  document.getElementById('headerDate').textContent = now.toLocaleDateString('es-PE',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+  populateDepartamentos('nac_dep');
+  populateDepartamentos('dir_dep');
+  renderAgenteDropdown('');
+  updateProgress();
+  document.querySelectorAll('input:not(.search-input), select').forEach(el => el.addEventListener('change', updateProgress));
+  document.querySelectorAll('input[type="text"], input[type="tel"], input[type="email"]').forEach(el => el.addEventListener('input', updateProgress));
+});
+
+function populateDepartamentos(selId) {
+  const sel = document.getElementById(selId);
+  DEPARTAMENTOS.forEach(d => { const o = document.createElement('option'); o.value = d; o.textContent = d; sel.appendChild(o); });
+}
+function loadProvincias(prefix) {
+  const dep = document.getElementById(prefix+'_dep').value;
+  const ps = document.getElementById(prefix+'_prov');
+  const ds = document.getElementById(prefix+'_dist');
+  ps.innerHTML = '<option value="">— Provincia —</option>';
+  ds.innerHTML = '<option value="">— Distrito —</option>';
+  if (dep && GEO[dep]) Object.keys(GEO[dep]).forEach(p => { const o = document.createElement('option'); o.value=p; o.textContent=p; ps.appendChild(o); });
+}
+function loadDistritos(prefix) {
+  const dep = document.getElementById(prefix+'_dep').value;
+  const prov = document.getElementById(prefix+'_prov').value;
+  const ds = document.getElementById(prefix+'_dist');
+  ds.innerHTML = '<option value="">— Distrito —</option>';
+  if (dep && prov && GEO[dep]?.[prov]) GEO[dep][prov].forEach(d => { const o = document.createElement('option'); o.value=d; o.textContent=d; ds.appendChild(o); });
+}
+
+// ===== AGENTE SEARCHABLE =====
+function renderAgenteDropdown(query) {
+  const dd = document.getElementById('agenteDropdown');
+  const filtered = query ? AGENTES.filter(a => a.toLowerCase().includes(query.toLowerCase())) : AGENTES;
+  if (filtered.length === 0) {
+    dd.innerHTML = '<div class="search-dropdown-item no-result">Sin resultados</div>';
+  } else {
+    dd.innerHTML = filtered.map(a => `<div class="search-dropdown-item" onmousedown="selectAgente('${a.replace(/'/g,"\\'")}')"> ${a}</div>`).join('');
+  }
+}
+function filterAgentes() {
+  const val = document.getElementById('agenteInput').value;
+  renderAgenteDropdown(val);
+  document.getElementById('agenteDropdown').classList.remove('hidden');
+  document.getElementById('agenteValue').value = '';
+  updateProgress();
+}
+function openAgenteDropdown() {
+  renderAgenteDropdown(document.getElementById('agenteInput').value);
+  document.getElementById('agenteDropdown').classList.remove('hidden');
+}
+function closeAgenteDropdown() {
+  setTimeout(() => document.getElementById('agenteDropdown').classList.add('hidden'), 200);
+}
+function selectAgente(name) {
+  document.getElementById('agenteInput').value = name;
+  document.getElementById('agenteValue').value = name;
+  document.getElementById('agenteDropdown').classList.add('hidden');
+  updateProgress();
+}
+
+// ===== TIPO DE VENTA =====
+function setTipo(tipo) {
+  currentTipo = tipo;
+  document.querySelectorAll('.tipo-btn').forEach(b => b.classList.toggle('active', b.dataset.tipo === tipo));
+  document.getElementById('formSection').classList.remove('hidden');
+  document.getElementById('submitBar').style.display = 'flex';
+  const labels = {PREPAGO:'Migración Prepago', POSTPAGO:'Migración Postpago', LINEA_MOVIL:'Línea Móvil'};
+  const cls = {PREPAGO:'prepago', POSTPAGO:'postpago', LINEA_MOVIL:'lm'};
+  const badge = document.getElementById('tipoBadge');
+  badge.textContent = labels[tipo]; badge.className = 'tipo-badge ' + cls[tipo];
+  document.getElementById('barTipo').textContent = labels[tipo];
+  applyTipoLogic(tipo);
+  updateProgress();
+}
+
+function sh(id) { document.getElementById(id)?.classList.remove('hidden'); }
+function hi(id) { document.getElementById(id)?.classList.add('hidden'); }
+
+function applyTipoLogic(tipo) {
+
+  updatePlanVendido();
+
+  const numInput = document.getElementById('numero');
+  const planFixed = document.getElementById('plan_actual_fixed');
+  const planInp = document.getElementById('plan_actual_input');
+  const subtipo = document.getElementById('subtipo')?.value || '';
+
+  // RESET
+  numInput.readOnly = false;
+  numInput.value = '';
+  numInput.placeholder = 'Número';
+  numInput.style.background = '';
+  numInput.style.color = '';
+  numInput.style.fontStyle = '';
+
+  if (tipo === 'PREPAGO') {
+
+    sh('field_tipo_doc');
+    sh('field_fec_nac');
+    sh('field_fec_dni');
+    sh('field_padre');
+    sh('field_madre');
+    sh('card_nacimiento');
+    sh('field_plan_actual');
+    sh('field_venta');
+    sh('field_numero');
+
+    hi('field_subtipo');
+    hi('field_num_orden');
+    hi('field_usuario_carga');
+    hi('field_canal_lm');
+    hi('field_estado_venta');
+
+    numInput.placeholder = 'Número a migrar';
+
+    planFixed.style.display = 'block';
+    planInp.style.display = 'none';
+    planFixed.textContent = 'Prepago';
+
+  } else if (tipo === 'POSTPAGO') {
+
+    sh('field_tipo_doc');
+    sh('field_fec_nac');
+    sh('field_fec_dni');
+    sh('field_padre');
+    sh('field_madre');
+    sh('card_nacimiento');
+    sh('field_plan_actual');
+    sh('field_venta');
+    sh('field_numero');
+
+    hi('field_subtipo');
+    hi('field_num_orden');
+    hi('field_usuario_carga');
+    hi('field_canal_lm');
+    hi('field_estado_venta');
+
+    numInput.placeholder = 'Número a migrar';
+
+    planFixed.style.display = 'none';
+    planInp.style.display = 'block';
+
+  } else {
+
+    sh('field_subtipo');
+    sh('field_num_orden');
+    sh('field_usuario_carga');
+    sh('field_canal_lm');
+    sh('field_estado_venta');
+    sh('field_numero');
+
+    hi('field_tipo_doc');
+    hi('field_fec_nac');
+    hi('field_fec_dni');
+    hi('field_padre');
+    hi('field_madre');
+    hi('card_nacimiento');
+    hi('field_plan_actual');
+    hi('field_venta');
+
+    if (subtipo === 'Linea Nueva') {
+
+      numInput.value = 'LINEA MOVIL';
+      numInput.readOnly = true;
+
+      numInput.style.background = '#f3f4f6';
+      numInput.style.color = '#6b7280';
+      numInput.style.fontStyle = 'italic';
+
+    } else {
+
+      numInput.placeholder = 'Número a gestionar';
+
+    }
+  }
+}
+
+function updatePlanVendido() {
+  const sub = document.getElementById('subtipo').value;
+  let key = currentTipo;
+  if (currentTipo === 'LINEA_MOVIL') key = sub === 'Linea Nueva' ? 'LINEA_MOVIL_NUEVA' : 'LINEA_MOVIL_PORT';
+  const planSel = document.getElementById('plan_vendido');
+  planSel.innerHTML = '<option value="">— Seleccionar plan —</option>';
+  (PLANES[key] || []).forEach(p => { const o = document.createElement('option'); o.value=p; o.textContent=p; planSel.appendChild(o); });
+}
+document.getElementById('subtipo').addEventListener('change', () => {
+
+  updatePlanVendido();
+
+  if (currentTipo === 'LINEA_MOVIL') {
+    applyTipoLogic('LINEA_MOVIL');
+  }
+
+  updateProgress();
+});
+
+// ===== PROGRESS =====
+function updateProgress() {
+  if (!currentTipo) { document.getElementById('progressFill').style.width = '0%'; return; }
+  const base = ['agenteValue','plan_vendido','num_doc','nombres','dir_exacta','dir_dep','dir_prov','dir_dist','num_ref','arpu'];
+  const byTipo = {
+    PREPAGO: [...base,'numero','venta','nac_dep','nac_prov','nac_dist','fec_nac','tipo_doc'],
+    POSTPAGO: [...base,'numero','venta','nac_dep','nac_prov','nac_dist','fec_nac','plan_actual_input','tipo_doc'],
+    LINEA_MOVIL: [...base,'subtipo','usuario_carga','num_orden','canal_lm','estado_venta']
+  };
+  const fields = byTipo[currentTipo] || base;
+  let filled = fields.filter(id => { const el=document.getElementById(id); return el?.value?.trim(); }).length;
+  document.getElementById('progressFill').style.width = Math.round(filled/fields.length*100) + '%';
+}
+
+// ===== SUBMIT =====
+function submitForm() {
+  if (!currentTipo) return;
+  const agente = document.getElementById('agenteValue').value;
+  if (!agente) { showError('agenteInput'); alert('Por favor selecciona un agente de la lista.'); return; }
+
+  const required = {
+    PREPAGO: ['numero','plan_vendido','tipo_doc','num_doc','nombres','fec_nac','nac_dep','nac_prov','nac_dist','dir_exacta','dir_dep','dir_prov','dir_dist','num_ref','arpu','venta'],
+    POSTPAGO: ['numero','plan_vendido','plan_actual_input','tipo_doc','num_doc','nombres','fec_nac','nac_dep','nac_prov','nac_dist','dir_exacta','dir_dep','dir_prov','dir_dist','num_ref','arpu','venta'],
+    LINEA_MOVIL: ['subtipo','plan_vendido','num_doc','nombres','dir_exacta','dir_dep','dir_prov','dir_dist','num_ref','arpu','usuario_carga','num_orden','canal_lm','estado_venta']
+  };
+  const fieldNames = {numero:'Número a gestionar/migrar',plan_vendido:'Plan vendido',plan_actual_input:'Plan actual',tipo_doc:'Tipo de documento',num_doc:'Número de documento',nombres:'Nombres y apellidos',fec_nac:'Fecha de nacimiento',nac_dep:'Departamento nacimiento',nac_prov:'Provincia nacimiento',nac_dist:'Distrito nacimiento',dir_exacta:'Dirección exacta',dir_dep:'Departamento dirección',dir_prov:'Provincia dirección',dir_dist:'Distrito dirección',num_ref:'Número de referencia',arpu:'ARPU Grupo',venta:'Venta',subtipo:'Subtipo',usuario_carga:'Usuario de carga',num_orden:'Número de orden',canal_lm:'Canal Línea Móvil',estado_venta:'Estado de venta'};
+
+  const missing = (required[currentTipo]||[]).filter(id => !document.getElementById(id)?.value?.trim());
+  if (missing.length > 0) {
+    alert('Faltan campos obligatorios:\n• ' + missing.map(id => fieldNames[id]||id).join('\n• '));
+    return;
+  }
+
+  // Success: show alert, reset keeping agente
+  const savedAgente = agente;
+  const savedAgenteDisplay = document.getElementById('agenteInput').value;
+  showSuccessAlert();
+  resetForm(true, savedAgente, savedAgenteDisplay);
+}
+
+function showSuccessAlert() {
+  const existing = document.querySelector('.alert-success');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.className = 'alert-success';
+  el.innerHTML = '✅ Venta registrada exitosamente';
+  document.body.appendChild(el);
+  setTimeout(() => {
+    el.classList.add('fade-out');
+    setTimeout(() => el.remove(), 400);
+  }, 3000);
+}
+
+function showError(id) {
+  const el = document.getElementById(id);
+  if (el) { el.style.borderColor = '#dc2626'; setTimeout(() => el.style.borderColor = '', 2000); }
+}
+
+function resetForm(keepAgente = false, agentVal = '', agentDisplay = '') {
+  document.querySelectorAll('input:not(.search-input), select').forEach(el => {
+    if (!el.readOnly) el.value = '';
+  });
+  document.getElementById('agenteInput').value = '';
+  document.getElementById('agenteValue').value = '';
+
+  if (keepAgente && agentVal) {
+    document.getElementById('agenteValue').value = agentVal;
+    document.getElementById('agenteInput').value = agentDisplay;
+  }
+
+  // Re-apply tipo logic to reset UI
+  if (currentTipo) {
+    applyTipoLogic(currentTipo);
+    // Reset plan vendido
+    const planSel = document.getElementById('plan_vendido');
+    planSel.innerHTML = '<option value="">— Seleccionar plan —</option>';
+    (PLANES[currentTipo] || PLANES['LINEA_MOVIL_PORT']).forEach(p => { const o = document.createElement('option'); o.value=p; o.textContent=p; planSel.appendChild(o); });
+    updatePlanVendido();
+  }
+
+  // Reset geo dropdowns
+  ['nac_prov','nac_dist','dir_prov','dir_dist'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = `<option value="">— ${id.includes('prov') ? 'Provincia' : 'Distrito'} —</option>`;
+  });
+
+  updateProgress();
+}
+</script>
+</body>
+</html>
